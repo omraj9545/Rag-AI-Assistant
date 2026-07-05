@@ -19,9 +19,9 @@ class EmbeddingService:
     def embed(self, text: str) -> List[float]:
         import sys
         if settings.gemini_api_key and "pytest" not in sys.modules:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key={settings.gemini_api_key}"
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key={settings.gemini_api_key}"
             payload = {
-                "model": "models/text-embedding-004",
+                "model": "models/gemini-embedding-001",
                 "content": {"parts": [{"text": text}]},
                 "outputDimensionality": 384
             }
@@ -35,10 +35,10 @@ class EmbeddingService:
     def embed_batch(self, texts: List[str], batch_size: int = 32) -> List[List[float]]:
         import sys
         if settings.gemini_api_key and "pytest" not in sys.modules:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:batchEmbedContents?key={settings.gemini_api_key}"
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:batchEmbedContents?key={settings.gemini_api_key}"
             requests_list = [
                 {
-                    "model": "models/text-embedding-004",
+                    "model": "models/gemini-embedding-001",
                     "content": {"parts": [{"text": t}]},
                     "outputDimensionality": 384
                 } for t in texts
