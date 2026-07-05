@@ -59,9 +59,14 @@ graph TD
    venv\Scripts\activate
    ```
 3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+   - For **local development & offline testing** (includes PyTorch/SentenceTransformers):
+     ```bash
+     pip install -r requirements-dev.txt
+     ```
+   - For **production deployment** (lightweight, uses API-based embeddings, excludes PyTorch):
+     ```bash
+     pip install -r requirements.txt
+     ```
 
 ### 3. Environment Variables
 Create a `.env` file in the root directory:
