@@ -1,0 +1,44 @@
+# Virtual Environment
+venv/
+.venv/
+env/
+ENV/
+
+# Local Environment Variables (API Keys)
+.env
+
+# Databases & Vector Stores
+papers.db
+chroma_db/
+
+# Uploads Folder
+uploads/
+
+# Python Cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Editor Settings
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# AI Assistant Development / Conversation Artifacts
+Implementation plan.md
+implementation_plan.md
+walkthrough.md
+task.md
+deployment_guide.md
