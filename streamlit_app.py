@@ -3,7 +3,7 @@ import requests
 import os
 
 # Backend API URL config
-API_URL = os.getenv("API_URL", "http://127.0.0.1:8000")
+API_URL = os.getenv("API_URL", "http://127.0.0.1:8000").rstrip('/')
 
 # Page Config
 st.set_page_config(
@@ -86,7 +86,9 @@ div.stButton > button {
 # Helper function to check API status
 def check_backend():
     try:
-        response = requests.get(f"{API_URL}/")
+        # Strip trailing slashes to prevent double-slash endpoints (e.g. domain.com//)
+        base_url = API_URL.rstrip('/')
+        response = requests.get(f"{base_url}/")
         return response.ok
     except requests.exceptions.ConnectionError:
         return False
