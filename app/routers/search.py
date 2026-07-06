@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Query, Depends
+from fastapi import APIRouter, Query, Depends, Header
 from app.database import get_db
 from app.services.embeddings import EmbeddingService
 from app.services.vector_store import VectorStore
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import Paper
+from typing import Optional
 
 router = APIRouter()
 
@@ -11,13 +12,15 @@ router = APIRouter()
 async def semantic_search(
     q: str = Query(..., description='Natural language search query'),
     top_k: int = Query(10, ge=1, le=50),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    x_session_id: Optional[str] = Header(None)
 ):
+    print("Semantic Search query received:", q)
     emb = EmbeddingService()
     query_vec = emb.embed(q)
 
     vs = VectorStore()
-    results = vs.query(query_vec, n_results=top_k)  # no paper_id filter = searches across all papers
+    results = vs.query(query_vec, n_results=top_k, session_id=x_session_id)
 
     # Enrich search results with SQLite paper metadata
     enriched = []

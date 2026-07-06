@@ -11,6 +11,7 @@ A lightweight, RAG (Retrieval-Augmented Generation) powered web application desi
 *   **Dynamic LLM Routing**: Features a runtime model configuration toggle to switch between **Google Gemini (2.5 Flash)** and **OpenRouter Qwen (2.5 72B)** dynamically without restarting the server.
 *   **Structured Summarization**: Generates map-reduce summaries of papers by analyzing section-level context, optimizing for API rate limits and quotas.
 *   **Multi-Paper Comparative Analysis**: Compares multiple research papers simultaneously along customizable comparison axes (methodology, findings, contributions).
+*   **Session-Based User Isolation**: Generates a unique browser session UUID for each visitor. All uploaded papers, metadata, and vector database embeddings are isolated per session, ensuring visitors can only view, query, and manage their own files.
 *   **Academic Editorial UI**: Streamlit interface designed with clean, dark/light theme-aware, Times New Roman typography to mimic academic publications.
 
 ---

@@ -26,10 +26,11 @@ async def ask_question(
     body: QuestionRequest,
     db: AsyncSession = Depends(get_db),
     x_llm_provider: Optional[str] = Header(None),
-    x_llm_model: Optional[str] = Header(None)
+    x_llm_model: Optional[str] = Header(None),
+    x_session_id: Optional[str] = Header(None)
 ):
     paper = await db.get(Paper, paper_id)
-    if not paper:
+    if not paper or paper.session_id != x_session_id:
         raise HTTPException(status_code=404, detail='Paper not found')
 
     # 1. Embed the question

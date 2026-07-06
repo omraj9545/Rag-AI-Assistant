@@ -18,6 +18,7 @@ class Paper(Base):
     file_path = Column(String, nullable=False)
     num_pages = Column(Integer, default=0)
     num_chunks = Column(Integer, default=0)
+    session_id = Column(String, nullable=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     
     chunks = relationship('Chunk', back_populates='paper', cascade='all, delete')

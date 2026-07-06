@@ -108,10 +108,20 @@ if not check_backend():
         time.sleep(5)
     st.rerun()
 
+# Initialize browser session ID for user-level isolation
+import uuid
+if "session_id" not in st.session_state:
+    st.session_state["session_id"] = str(uuid.uuid4())
+
+session_id = st.session_state["session_id"]
+session_headers = {
+    "X-Session-ID": session_id
+}
+
 # Load currently ingested papers
 def get_papers():
     try:
-        res = requests.get(f"{API_URL}/papers/")
+        res = requests.get(f"{API_URL}/papers/", headers=session_headers)
         if res.ok:
             return res.json()
     except Exception:
@@ -134,10 +144,11 @@ with st.sidebar:
     )
     active_provider, active_model = provider_options[selected_option]
     
-    # HTTP Headers containing active model routing details
+    # HTTP Headers containing active model routing details and session ID
     llm_headers = {
         "X-LLM-Provider": active_provider,
-        "X-LLM-Model": active_model
+        "X-LLM-Model": active_model,
+        "X-Session-ID": session_id
     }
 
     st.markdown("---")
@@ -149,7 +160,7 @@ with st.sidebar:
             with st.spinner("Processing PDF and creating index..."):
                 try:
                     files = {"file": (uploaded_file.name, uploaded_file.getvalue(), "application/pdf")}
-                    response = requests.post(f"{API_URL}/papers/upload", files=files)
+                    response = requests.post(f"{API_URL}/papers/upload", files=files, headers=session_headers)
                     if response.ok:
                         st.success("Ingested successfully.")
                         st.rerun()
@@ -169,7 +180,7 @@ with st.sidebar:
         with col_del:
             if st.button("Delete", key=f"del_{paper.get('id')}"):
                 try:
-                    res = requests.delete(f"{API_URL}/papers/{paper.get('id')}")
+                    res = requests.delete(f"{API_URL}/papers/{paper.get('id')}", headers=session_headers)
                     if res.ok:
                         st.rerun()
                 except Exception as e:
@@ -267,7 +278,7 @@ with tab_search:
     if st.button("Search", type="primary") and query:
         with st.spinner("Searching..."):
             try:
-                res = requests.get(f"{API_URL}/search/", params={"q": query, "top_k": search_k})
+                res = requests.get(f"{API_URL}/search/", params={"q": query, "top_k": search_k}, headers=session_headers)
                 if res.ok:
                     data = res.json()
                     results = data.get("results", [])

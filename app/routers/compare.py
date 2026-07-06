@@ -24,7 +24,8 @@ async def compare_papers(
     body: CompareRequest,
     db: AsyncSession = Depends(get_db),
     x_llm_provider: Optional[str] = Header(None),
-    x_llm_model: Optional[str] = Header(None)
+    x_llm_model: Optional[str] = Header(None),
+    x_session_id: Optional[str] = Header(None)
 ):
     if len(body.paper_ids) < 2:
         raise HTTPException(status_code=400, detail='Provide at least 2 paper IDs')
@@ -32,7 +33,7 @@ async def compare_papers(
     papers = []
     for pid in body.paper_ids:
         p = await db.get(Paper, pid)
-        if not p:
+        if not p or p.session_id != x_session_id:
             raise HTTPException(status_code=404, detail=f'Paper {pid} not found')
         papers.append(p)
 

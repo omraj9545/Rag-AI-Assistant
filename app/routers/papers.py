@@ -12,7 +12,11 @@ from typing import Optional
 router = APIRouter()
 
 @router.post('/upload')
-async def upload_paper(file: UploadFile = File(...), db: AsyncSession = Depends(get_db)):
+async def upload_paper(
+    file: UploadFile = File(...), 
+    db: AsyncSession = Depends(get_db),
+    x_session_id: Optional[str] = Header(None)
+):
     if not file.filename.endswith('.pdf'):
         raise HTTPException(status_code=400, detail='Only PDF files are accepted')
     
@@ -23,7 +27,7 @@ async def upload_paper(file: UploadFile = File(...), db: AsyncSession = Depends(
         shutil.copyfileobj(file.file, buffer)
     
     try:
-        paper = await ingest_paper(save_path, file.filename, db)
+        paper = await ingest_paper(save_path, file.filename, db, session_id=x_session_id)
         return {'paper_id': paper.id, 'filename': paper.filename, 'title': paper.title}
     except Exception as e:
         if os.path.exists(save_path):
@@ -31,22 +35,33 @@ async def upload_paper(file: UploadFile = File(...), db: AsyncSession = Depends(
         raise HTTPException(status_code=500, detail=f"Ingestion failed: {str(e)}")
 
 @router.get('/')
-async def list_papers(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Paper))
+async def list_papers(
+    db: AsyncSession = Depends(get_db),
+    x_session_id: Optional[str] = Header(None)
+):
+    result = await db.execute(select(Paper).where(Paper.session_id == x_session_id))
     papers = result.scalars().all()
     return [{'id': p.id, 'filename': p.filename, 'title': p.title, 'num_pages': p.num_pages, 'num_chunks': p.num_chunks} for p in papers]
 
 @router.get('/{paper_id}')
-async def get_paper(paper_id: str, db: AsyncSession = Depends(get_db)):
+async def get_paper(
+    paper_id: str, 
+    db: AsyncSession = Depends(get_db),
+    x_session_id: Optional[str] = Header(None)
+):
     paper = await db.get(Paper, paper_id)
-    if not paper:
+    if not paper or paper.session_id != x_session_id:
         raise HTTPException(status_code=404, detail='Paper not found')
     return paper
 
 @router.delete('/{paper_id}')
-async def delete_paper(paper_id: str, db: AsyncSession = Depends(get_db)):
+async def delete_paper(
+    paper_id: str, 
+    db: AsyncSession = Depends(get_db),
+    x_session_id: Optional[str] = Header(None)
+):
     paper = await db.get(Paper, paper_id)
-    if not paper:
+    if not paper or paper.session_id != x_session_id:
         raise HTTPException(status_code=404, detail='Paper not found')
 
     # Delete local PDF file
@@ -74,10 +89,11 @@ async def summarize_paper(
     paper_id: str,
     db: AsyncSession = Depends(get_db),
     x_llm_provider: Optional[str] = Header(None),
-    x_llm_model: Optional[str] = Header(None)
+    x_llm_model: Optional[str] = Header(None),
+    x_session_id: Optional[str] = Header(None)
 ):
     paper = await db.get(Paper, paper_id)
-    if not paper:
+    if not paper or paper.session_id != x_session_id:
         raise HTTPException(status_code=404, detail='Paper not found')
 
     from app.services.vector_store import VectorStore

@@ -7,7 +7,7 @@ from app.models import Paper, Chunk
 from sqlalchemy.ext.asyncio import AsyncSession
 import uuid
 
-async def ingest_paper(file_path: str, filename: str, db: AsyncSession) -> Paper:
+async def ingest_paper(file_path: str, filename: str, db: AsyncSession, session_id: str = None) -> Paper:
     # 1. Extract metadata
     meta = extract_metadata(file_path)
 
@@ -20,7 +20,8 @@ async def ingest_paper(file_path: str, filename: str, db: AsyncSession) -> Paper
         abstract=meta['abstract'],
         filename=filename,
         file_path=file_path,
-        num_pages=meta['num_pages']
+        num_pages=meta['num_pages'],
+        session_id=session_id
     )
     db.add(paper)
     await db.flush()  # Get paper.id without doing a full commit
@@ -61,7 +62,8 @@ async def ingest_paper(file_path: str, filename: str, db: AsyncSession) -> Paper
             metadatas=[{
                 'paper_id': paper.id,
                 'page_num': c.page_num,
-                'chunk_index': c.chunk_index
+                'chunk_index': c.chunk_index,
+                'session_id': session_id or ''
             } for c in all_chunks]
         )
 

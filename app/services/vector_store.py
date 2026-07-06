@@ -27,12 +27,18 @@ class VectorStore:
         )
 
     def query(self, query_embedding: List[float], n_results: int = 5,
-              paper_id: Optional[str] = None) -> List[Dict]:
-        where = {'paper_id': paper_id} if paper_id else None
+              paper_id: Optional[str] = None, session_id: Optional[str] = None) -> List[Dict]:
+        where = {}
+        if paper_id:
+            where['paper_id'] = paper_id
+        if session_id:
+            where['session_id'] = session_id or ''
+            
+        where_filter = where if where else None
         results = self._collection.query(
             query_embeddings=[query_embedding],
             n_results=n_results,
-            where=where,
+            where=where_filter,
             include=['documents', 'metadatas', 'distances']
         )
         
