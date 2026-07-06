@@ -93,11 +93,20 @@ def check_backend():
     except requests.exceptions.ConnectionError:
         return False
 
-# Render Warning if Backend is offline
+# Render Warning / Auto-Wake-Up Loop if Backend is offline
 if not check_backend():
-    st.error("Cannot connect to the FastAPI backend server.")
-    st.info(f"Ensure the FastAPI backend is running locally at {API_URL}.\n\nRun:\n```bash\nvenv\\Scripts\\uvicorn.exe app.main:app --reload --port 8000\n```")
-    st.stop()
+    st.warning("Connection to FastAPI backend failed. Waking up the server...")
+    st.markdown(f"""
+    **The backend API server is currently spinning up.**
+    
+    On Render's free tier, the backend goes to sleep after inactivity and takes about 60 seconds to spin up. 
+    
+    *Please wait, this page will automatically refresh once the server is ready...*
+    """)
+    import time
+    with st.spinner("Waking up backend container..."):
+        time.sleep(5)
+    st.rerun()
 
 # Load currently ingested papers
 def get_papers():
