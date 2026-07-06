@@ -88,26 +88,38 @@ def check_backend():
     try:
         # Strip trailing slashes to prevent double-slash endpoints (e.g. domain.com//)
         base_url = API_URL.rstrip('/')
-        response = requests.get(f"{base_url}/")
+        # Short timeout: don't hang waiting for a sleeping server
+        response = requests.get(f"{base_url}/", timeout=5)
         return response.ok
-    except requests.exceptions.ConnectionError:
+    except Exception:
         return False
 
 # Render Warning / Auto-Wake-Up Loop if Backend is offline
 if not check_backend():
-    st.warning("Connection to FastAPI backend failed. Waking up the server...")
-    st.markdown(f"""
-    **The backend API server is currently spinning up.**
-    
-    On Render's free tier, the backend goes to sleep after inactivity and takes about 60 seconds to spin up. 
-    
-    *Please wait, this page will automatically refresh once the server is ready...*
-    """)
     import time
-    with st.spinner("Waking up backend container..."):
+    
+    # Track how long we've been waiting across reruns
+    if "wake_start" not in st.session_state:
+        st.session_state["wake_start"] = time.time()
+    
+    elapsed = int(time.time() - st.session_state["wake_start"])
+    
+    st.warning("Waking up the backend server...")
+    st.markdown(f"""
+**The backend API server is currently spinning up.**
+
+On Render's free tier, the backend goes to sleep after inactivity and takes **~60 seconds** to spin up.
+
+Waiting: **{elapsed} seconds** elapsed...
+    """)
+    
+    with st.spinner("Attempting to connect..."):
         time.sleep(5)
     st.rerun()
 
+# Backend is alive — clear the wake timer if it was set
+if "wake_start" in st.session_state:
+    del st.session_state["wake_start"]
 # Initialize browser session ID for user-level isolation
 import uuid
 if "session_id" not in st.session_state:
