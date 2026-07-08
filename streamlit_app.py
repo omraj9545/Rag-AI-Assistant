@@ -83,43 +83,70 @@ div.stButton > button {
 </style>
 """, unsafe_allow_html=True)
 
-# Helper function to check API status
+# Helper function to check API status (fast, non-blocking)
 def check_backend():
     try:
-        # Strip trailing slashes to prevent double-slash endpoints (e.g. domain.com//)
         base_url = API_URL.rstrip('/')
-        # 10s timeout: long enough that a waking server might respond mid-boot
-        response = requests.get(f"{base_url}/", timeout=10)
+        response = requests.get(f"{base_url}/", timeout=2)
         return response.ok
     except Exception:
         return False
 
-# Render Warning / Auto-Wake-Up Loop if Backend is offline
+# Render Warning / Auto-Wake-Up with browser-side parallel polling
 if not check_backend():
-    import time
-    
-    # Track how long we've been waiting across reruns
-    if "wake_start" not in st.session_state:
-        st.session_state["wake_start"] = time.time()
-    
-    elapsed = int(time.time() - st.session_state["wake_start"])
-    max_wait = 120  # Render free tier can take up to ~120s
-    progress = min(elapsed / max_wait, 0.95)
-    
     st.markdown("### Starting Backend Server...")
-    st.progress(progress, text=f"Connecting... ({elapsed}s elapsed, usually takes ~60s)")
     st.info(
         "The backend server goes to sleep after inactivity on Render's free tier. "
         "It is now booting up automatically. This typically takes **60–90 seconds**."
     )
     
-    with st.spinner("Pinging backend..."):
-        time.sleep(5)
-    st.rerun()
+    # Inject JavaScript that polls the backend from the browser in parallel.
+    # Once it gets a response, it automatically reloads the page.
+    st.components.v1.html(f"""
+    <div id="status" style="font-family: 'Times New Roman', serif; padding: 20px; text-align: center;">
+        <div style="font-size: 18px; margin-bottom: 15px;">Pinging backend server...</div>
+        <div id="timer" style="font-size: 32px; font-weight: bold; margin-bottom: 10px;">0s</div>
+        <div style="width: 100%; background: #333; border-radius: 8px; overflow: hidden; height: 8px;">
+            <div id="bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #4CAF50, #8BC34A); transition: width 0.5s;"></div>
+        </div>
+        <div id="msg" style="margin-top: 12px; color: #aaa; font-size: 14px;">Attempting to connect...</div>
+    </div>
+    <script>
+        const backendUrl = "{API_URL.rstrip('/')}";
+        let seconds = 0;
+        const maxWait = 120;
+        
+        function ping() {{
+            seconds++;
+            document.getElementById("timer").textContent = seconds + "s";
+            document.getElementById("bar").style.width = Math.min((seconds / maxWait) * 100, 95) + "%";
+            document.getElementById("msg").textContent = "Attempt " + seconds + " — waiting for backend response...";
+            
+            fetch(backendUrl + "/", {{ mode: "no-cors", cache: "no-store" }})
+                .then(() => {{
+                    // no-cors returns opaque response, so also try a real check
+                    return fetch(backendUrl + "/", {{ cache: "no-store" }});
+                }})
+                .then(r => {{
+                    if (r.ok) {{
+                        document.getElementById("msg").textContent = "Backend is alive! Reloading...";
+                        document.getElementById("bar").style.width = "100%";
+                        document.getElementById("bar").style.background = "#4CAF50";
+                        setTimeout(() => window.parent.location.reload(), 500);
+                    }}
+                }})
+                .catch(() => {{}});
+        }}
+        
+        // Ping every 3 seconds in parallel from the browser
+        setInterval(ping, 3000);
+        // Also fire immediately
+        ping();
+    </script>
+    """, height=150)
+    
+    st.stop()
 
-# Backend is alive — clear the wake timer if it was set
-if "wake_start" in st.session_state:
-    del st.session_state["wake_start"]
 # Initialize browser session ID for user-level isolation
 import uuid
 if "session_id" not in st.session_state:
