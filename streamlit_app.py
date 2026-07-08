@@ -88,8 +88,8 @@ def check_backend():
     try:
         # Strip trailing slashes to prevent double-slash endpoints (e.g. domain.com//)
         base_url = API_URL.rstrip('/')
-        # Short timeout: don't hang waiting for a sleeping server
-        response = requests.get(f"{base_url}/", timeout=5)
+        # 10s timeout: long enough that a waking server might respond mid-boot
+        response = requests.get(f"{base_url}/", timeout=10)
         return response.ok
     except Exception:
         return False
@@ -103,17 +103,17 @@ if not check_backend():
         st.session_state["wake_start"] = time.time()
     
     elapsed = int(time.time() - st.session_state["wake_start"])
+    max_wait = 120  # Render free tier can take up to ~120s
+    progress = min(elapsed / max_wait, 0.95)
     
-    st.warning("Waking up the backend server...")
-    st.markdown(f"""
-**The backend API server is currently spinning up.**
-
-On Render's free tier, the backend goes to sleep after inactivity and takes **~60 seconds** to spin up.
-
-Waiting: **{elapsed} seconds** elapsed...
-    """)
+    st.markdown("### Starting Backend Server...")
+    st.progress(progress, text=f"Connecting... ({elapsed}s elapsed, usually takes ~60s)")
+    st.info(
+        "The backend server goes to sleep after inactivity on Render's free tier. "
+        "It is now booting up automatically. This typically takes **60–90 seconds**."
+    )
     
-    with st.spinner("Attempting to connect..."):
+    with st.spinner("Pinging backend..."):
         time.sleep(5)
     st.rerun()
 
