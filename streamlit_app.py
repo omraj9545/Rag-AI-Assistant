@@ -169,24 +169,12 @@ def get_papers():
 
 papers = get_papers()
 
-# ─── SIDEBAR: UPLOAD & INVENTORY & MODEL SELECTOR ──────────────────────
+# ─── SIDEBAR: UPLOAD & INVENTORY ──────────────────────────────────────
 with st.sidebar:
-    st.markdown("### Model Configuration")
-    provider_options = {
-        "Google Gemini Flash": ("gemini", "gemini-2.5-flash-lite"),
-        "OpenRouter Qwen 72B": ("openrouter", "qwen/qwen-2.5-72b-instruct")
-    }
-    selected_option = st.selectbox(
-        "Active LLM Model:",
-        options=list(provider_options.keys()),
-        index=0
-    )
-    active_provider, active_model = provider_options[selected_option]
-    
-    # HTTP Headers containing active model routing details and session ID
+    # HTTP Headers containing LLM routing details and session ID
     llm_headers = {
-        "X-LLM-Provider": active_provider,
-        "X-LLM-Model": active_model,
+        "X-LLM-Provider": "openrouter",
+        "X-LLM-Model": "qwen/qwen-2.5-72b-instruct",
         "X-Session-ID": session_id
     }
 

@@ -3,8 +3,8 @@ from typing import Optional
 
 class Settings(BaseSettings):
     ollama_host: str = 'http://localhost:11434'
-    llm_provider: str = 'ollama'
-    llm_model: str = 'qwen3:8b'
+    llm_provider: str = 'openrouter'
+    llm_model: str = 'qwen/qwen-2.5-72b-instruct'
     chroma_persist_dir: str = './chroma_db'
     upload_dir: str = './uploads'
     database_url: str = 'sqlite+aiosqlite:///./papers.db'
